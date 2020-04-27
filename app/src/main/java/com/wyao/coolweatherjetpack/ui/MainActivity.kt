@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.lifecycle.ViewModelProvider
 import com.wyao.coolweatherjetpack.R
 import com.wyao.coolweatherjetpack.data.WeatherRepository
+import com.wyao.coolweatherjetpack.ui.area.ChooseAreaFragment
 import com.wyao.coolweatherjetpack.ui.weather.WeatherActivity
 
 class MainActivity : AppCompatActivity() {
@@ -21,7 +22,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         } else {
-            // load weather
+            supportFragmentManager.beginTransaction().replace(R.id.container, ChooseAreaFragment()).commit()
         }
     }
 }
