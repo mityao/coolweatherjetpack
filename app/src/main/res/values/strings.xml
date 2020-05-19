@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">coolweatherjetpack</string>
+    <string name="app_name">cool weather</string>
+    <string name="forecast">Forecast</string>
+    <string name="air_condition">Air Condition</string>
+    <string name="pm25">PM2.5 指数</string>
+    <string name="aqi">AQI 指数</string>
+    <string name="suggestion">生活建议</string>
 </resources>
