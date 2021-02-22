@@ -2,29 +2,104 @@ package com.wyao.coolweatherjetpack.ui.area
 
 import android.view.View
 import android.widget.AdapterView
+import android.widget.Toast
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.wyao.coolweatherjetpack.CoolWeatherApplication
 import com.wyao.coolweatherjetpack.data.PlaceRepository
+import com.wyao.coolweatherjetpack.data.model.place.City
+import com.wyao.coolweatherjetpack.data.model.place.County
+import com.wyao.coolweatherjetpack.data.model.place.Province
+import com.wyao.coolweatherjetpack.ui.area.ChooseAreaFragment.Companion.LEVEL_CITY
+import com.wyao.coolweatherjetpack.ui.area.ChooseAreaFragment.Companion.LEVEL_COUNTY
+import com.wyao.coolweatherjetpack.ui.area.ChooseAreaFragment.Companion.LEVEL_PROVINCE
+import kotlinx.coroutines.launch
+import java.util.ArrayList
 
 class ChooseAreaViewModel(private val repository: PlaceRepository) : ViewModel() {
 
-    //TODO: add functions for ChooseAreaViewModel
-    fun getStates() {
+    var currentLevel = MutableLiveData<Int>()
 
+    var dataChanged = MutableLiveData<Int>()
+
+    var isLoading = MutableLiveData<Boolean>()
+
+    var areaSelected = MutableLiveData<Boolean>()
+
+    var selectedProvince: Province? = null
+
+    var selectedCity: City? = null
+
+    var selectedCounty: County? = null
+
+    lateinit var provinces: MutableList<Province>
+
+    lateinit var cities: MutableList<City>
+
+    lateinit var counties: MutableList<County>
+
+    val dataList = ArrayList<String>()
+
+    fun getProvinces() {
+        currentLevel.value = LEVEL_PROVINCE
+        launch {
+            provinces = repository.getProvinceList()
+            dataList.addAll(provinces.map { it.provinceName })
+        }
     }
 
-    fun getCities() {
-
+    private fun getCities() = selectedProvince?.let {
+        currentLevel.value = LEVEL_CITY
+        launch {
+            cities = repository.getCityList(it.provinceCode)
+            dataList.addAll(cities.map { it.cityName })
+        }
     }
 
-    fun getCounties() {
-
+    private fun getCounties() = selectedCity?.let {
+        currentLevel.value = LEVEL_COUNTY
+        launch {
+            counties = repository.getCountyList(it.provinceId, it.cityCode)
+            dataList.addAll(counties.map { it.countyName })
+        }
     }
 
     fun onBack() {
-
+        if (currentLevel.value == LEVEL_COUNTY) {
+            getCities()
+        } else if (currentLevel.value == LEVEL_CITY) {
+            getProvinces()
+        }
     }
 
     fun onListViewItemClick(parent: AdapterView<*>, view: View, position: Int, id: Long) {
+        when (currentLevel.value) {
+            LEVEL_PROVINCE -> {
+                selectedProvince = provinces[position]
+                getCities()
+            }
+            LEVEL_CITY -> {
+                selectedCity = cities[position]
+                getCounties()
+            }
+            LEVEL_COUNTY -> {
+                selectedCounty = counties[position]
+                areaSelected.value = true
+            }
+        }
+    }
 
+    private fun launch(block: suspend () -> Unit) = viewModelScope.launch {
+        try {
+            isLoading.value = true
+            dataList.clear()
+            block()
+            dataChanged.value = dataChanged.value?.plus(1)
+            isLoading.value = false
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            Toast.makeText(CoolWeatherApplication.mContext, t.message, Toast.LENGTH_SHORT).show()
+        }
     }
 }
